@@ -2,6 +2,8 @@
 
 A Python / FastAPI pipeline that turns 3D-print model pages (Thingiverse, Printables, MakerWorld) into published **Creality Cloud** listings.
 
+![Creality Pipeline dashboard](screenshots/dashboard.png)
+
 ## What it does
 1. **Discover** — research panel that lists the most popular models on a site (read-only; no download/upload).
 2. **Fetch & Edit** — downloads a model's images and STL/CAD file, then recolors the product images to red with Gemini (`gemini-2.5-flash-image`).
