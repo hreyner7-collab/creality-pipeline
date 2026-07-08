@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Creality Pipeline</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0f0f0f;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 32px 24px;
+  }
+
+  h1 { font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 32px; }
+  h1 span { color: #e53935; }
+
+  .card {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .card h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: .08em; color: #888; margin-bottom: 16px; }
+
+  .row { display: flex; gap: 12px; align-items: center; }
+
+  input[type="text"], textarea {
+    width: 100%;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: #e0e0e0;
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color .2s;
+  }
+  input[type="text"]:focus, textarea:focus { border-color: #e53935; }
+  textarea { resize: vertical; min-height: 80px; }
+
+  button {
+    background: #e53935;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .2s, opacity .2s;
+  }
+  button:hover { background: #c62828; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid #e53935;
+    color: #e53935;
+  }
+  .btn-outline:hover { background: #e5393520; }
+
+  .image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .image-pair { display: flex; flex-direction: column; gap: 8px; }
+
+  .image-pair label {
+    font-size: 0.75rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+
+  .image-pair img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #2a2a2a;
+  }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .compare .col label { display: block; font-size: 0.75rem; color: #666; margin-bottom: 6px; }
+  .compare img { width: 100%; border-radius: 8px; border: 1px solid #2a2a2a; }
+
+  .status {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    display: none;
+  }
+  .status.info  { background: #1565c020; border: 1px solid #1565c0; color: #90caf9; display: block; }
+  .status.ok    { background: #1b5e2020; border: 1px solid #2e7d32; color: #a5d6a7; display: block; }
+  .status.error { background: #b71c1c20; border: 1px solid #b71c1c; color: #ef9a9a; display: block; }
+  .status.warn  { background: #e65100 20; border: 1px solid #e65100; color: #ffcc80; display: block; }
+
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #ffffff40; border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #upload-btn { margin-top: 16px; }
+  #upload-section { display: none; }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 6px; }
+
+  select {
+    background: #111; border: 1px solid #333; border-radius: 8px;
+    color: #e0e0e0; padding: 10px 14px; font-size: 0.95rem; outline: none;
+  }
+  select:focus { border-color: #e53935; }
+
+  .discover-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 16px; margin-top: 16px;
+  }
+  .dcard {
+    background: #111; border: 1px solid #2a2a2a; border-radius: 10px;
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+  .dcard .thumb {
+    width: 100%; aspect-ratio: 4/3; object-fit: cover; background: #1d1d1d;
+    display: flex; align-items: center; justify-content: center; color: #444; font-size: .8rem;
+  }
+  .dcard .body { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .dcard .nm { font-size: .9rem; font-weight: 600; color: #eee; line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .dcard .meta { font-size: .75rem; color: #777; }
+  .dcard a.view {
+    margin-top: auto; font-size: .8rem; color: #e53935; text-decoration: none;
+    border: 1px solid #e53935; border-radius: 6px; padding: 6px 0; text-align: center;
+  }
+  .dcard a.view:hover { background: #e5393520; }
+  .note { font-size: .78rem; color: #777; margin-top: 10px; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<h1>Creality <span>Pipeline</span></h1>
+
+<!-- Find Top Models (research only) -->
+<div class="card">
+  <h2>Find Top Models · Research</h2>
+  <div class="row">
+    <select id="discover-site">
+      <option value="makerworld">MakerWorld</option>
+      <option value="printables">Printables</option>
+      <option value="thingiverse">Thingiverse</option>
+    </select>
+    <select id="discover-count">
+      <option value="12">Top 12</option>
+      <option value="20" selected>Top 20</option>
+      <option value="40">Top 40</option>
+    </select>
+    <button id="discover-btn" onclick="discoverModels()">Find</button>
+  </div>
+  <div id="discover-status" class="status"></div>
+  <div id="discover-grid" class="discover-grid"></div>
+  <p class="note">Research only — shows what's trending so you can decide what to design.
+    It does <strong>not</strong> download, edit, or upload anything. Use “View original” to open the
+    creator's page. Only repost models you have the rights to, with credit to the designer.</p>
+</div>
+
+<!-- Step 1: Fetch URL -->
+<div class="card">
+  <h2>1 · Model URL</h2>
+  <div class="row">
+    <input type="text" id="url-input" placeholder="Paste Thingiverse or Printables URL…">
+    <button id="fetch-btn" onclick="fetchModel()">Fetch &amp; Edit</button>
+  </div>
+  <div id="fetch-status" class="status"></div>
+</div>
+
+<!-- Step 2: Preview -->
+<div class="card" id="preview-section" style="display:none">
+  <h2>2 · Preview</h2>
+  <div id="image-container"></div>
+</div>
+
+<!-- Step 3: Publish -->
+<div class="card" id="upload-section">
+  <h2>3 · Publish to Creality Cloud</h2>
+  <div class="field">
+    <label>Model Name</label>
+    <input type="text" id="model-name">
+  </div>
+  <div class="field">
+    <label>Description</label>
+    <textarea id="model-desc"></textarea>
+  </div>
+  <button id="upload-btn" onclick="uploadModel()">Upload to Creality Cloud</button>
+  <div id="upload-status" class="status"></div>
+</div>
+
+<script>
+  let _stlPath = null;
+  let _imagePaths = [];
+  let _sourceUrl = '';
+
+  function setStatus(id, type, html) {
+    const el = document.getElementById(id);
+    el.className = 'status ' + type;
+    el.innerHTML = html;
+  }
+
+  async function fetchModel() {
+    const url = document.getElementById('url-input').value.trim();
+    if (!url) return;
+
+    const btn = document.getElementById('fetch-btn');
+    btn.disabled = true;
+    setStatus('fetch-status', 'info', '<span class="spinner"></span>Downloading and editing with Gemini…');
+
+    document.getElementById('preview-section').style.display = 'none';
+    document.getElementById('upload-section').style.display = 'none';
+
+    try {
+      const res = await fetch('/fetch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Unknown error');
+
+      // Store paths for upload
+      _stlPath = data._raw_stl;
+      _imagePaths = data._raw_images || [];
+      _sourceUrl = data.source_url || url;
+
+      // Populate form
+      document.getElementById('model-name').value = data.name || '';
+      document.getElementById('model-desc').value = data.description || '';
+
+      // Build image comparison grid
+      const container = document.getElementById('image-container');
+      container.innerHTML = '';
+
+      const originals = data.original_images || [];
+      const edited = data.edited_images || [];
+
+      if (originals.length === 0 && edited.length === 0) {
+        container.innerHTML = '<p style="color:#666">No preview images found for this model.</p>';
+      } else {
+        const max = Math.max(originals.length, edited.length);
+        for (let i = 0; i < max; i++) {
+          const pair = document.createElement('div');
+          pair.className = 'compare';
+
+          const left = document.createElement('div');
+          left.className = 'col';
+          left.innerHTML = '<label>Original</label>';
+          if (originals[i]) {
+            const img = document.createElement('img');
+            img.src = originals[i];
+            img.alt = 'Original';
+            left.appendChild(img);
+          } else {
+            left.innerHTML += '<p style="color:#444;font-size:.8rem">N/A</p>';
+          }
+
+          const right = document.createElement('div');
+          right.className = 'col';
+          right.innerHTML = '<label>Gemini Edited (Red)</label>';
+          if (edited[i]) {
+            const img = document.createElement('img');
+            img.src = edited[i];
+            img.alt = 'Edited';
+            right.appendChild(img);
+          } else {
+            right.innerHTML += '<p style="color:#444;font-size:.8rem">Edit failed</p>';
+          }
+
+          pair.appendChild(left);
+          pair.appendChild(right);
+          container.appendChild(pair);
+        }
+      }
+
+      document.getElementById('preview-section').style.display = 'block';
+      document.getElementById('upload-section').style.display = 'block';
+
+      const warnMsg = data.edit_warning
+        ? `<br><small>Image editing warning: ${data.edit_warning}</small>` : '';
+      setStatus('fetch-status', 'ok', `Downloaded <strong>${data.name || 'model'}</strong> · ${_imagePaths.length} image(s) ready.${warnMsg}`);
+
+    } catch (err) {
+      setStatus('fetch-status', 'error', '&#10005; ' + err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function uploadModel() {
+    const btn = document.getElementById('upload-btn');
+    btn.disabled = true;
+    setStatus('upload-status', 'info', '<span class="spinner"></span>Opening Creality Cloud… (a browser window will appear)');
+
+    try {
+      const res = await fetch('/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('model-name').value,
+          description: document.getElementById('model-desc').value,
+          stl_path: _stlPath || '',
+          image_paths: _imagePaths,
+          source_url: _sourceUrl || ''
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Upload failed');
+
+      if (data.success) {
+        setStatus('upload-status', 'ok', `&#10003; Uploaded successfully! <a href="${data.url}" target="_blank" style="color:#a5d6a7">${data.url}</a>`);
+      } else {
+        setStatus('upload-status', 'error', '&#10005; ' + (data.error || 'Upload failed'));
+      }
+    } catch (err) {
+      setStatus('upload-status', 'error', '&#10005; ' + err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function discoverModels() {
+    const site = document.getElementById('discover-site').value;
+    const count = parseInt(document.getElementById('discover-count').value, 10);
+    const btn = document.getElementById('discover-btn');
+    const grid = document.getElementById('discover-grid');
+    btn.disabled = true;
+    grid.innerHTML = '';
+    setStatus('discover-status', 'info', '<span class="spinner"></span>Scanning ' + site + ' for the most popular models…');
+
+    try {
+      const res = await fetch('/discover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ site, count })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Discovery failed');
+
+      const models = data.models || [];
+      if (!models.length) {
+        setStatus('discover-status', 'warn', 'No models found — the site layout may have changed.');
+      } else {
+        setStatus('discover-status', 'ok', `Found ${models.length} trending models on ${site}.`);
+        models.forEach((m, i) => {
+          const card = document.createElement('div');
+          card.className = 'dcard';
+          const thumb = (m.thumb && m.thumb.startsWith('http'))
+            ? `<img class="thumb" src="${m.thumb}" alt="" referrerpolicy="no-referrer">`
+            : `<div class="thumb">no preview</div>`;
+          card.innerHTML = thumb +
+            `<div class="body">
+               <div class="nm">${i + 1}. ${m.name || 'Untitled'}</div>
+               <div class="meta">${m.stats || ''}</div>
+               <a class="view" href="${m.url}" target="_blank" rel="noreferrer">View original →</a>
+             </div>`;
+          grid.appendChild(card);
+        });
+      }
+    } catch (err) {
+      setStatus('discover-status', 'error', '&#10005; ' + err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // Allow Enter key in URL field
+  document.getElementById('url-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') fetchModel();
+  });
+</script>
+</body>
+</html>

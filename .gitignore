@@ -1,0 +1,6 @@
+downloads/
+browser_profile/
+cookies.json
+.env
+__pycache__/
+*.pyc
