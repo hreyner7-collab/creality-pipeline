@@ -38,7 +38,7 @@ class DiscoverRequest(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
-    html = (BASE_DIR / "templates" / "index.html").read_text(encoding="utf-8")
+    html = (BASE_DIR / "creality" / "index.html").read_text(encoding="utf-8")
     return HTMLResponse(html)
 
 
